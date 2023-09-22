@@ -488,6 +488,14 @@ private struct LocalFileSystem: FileSystem {
         let destString = relative ? destination.relative(to: path.parentDirectory).pathString : destination.pathString
         try FileManager.default.createSymbolicLink(atPath: path.pathString, withDestinationPath: destString)
     }
+    
+    func fcloseWrapper(_ fp: UnsafeMutablePointer<FILE>?) {
+		fclose(fp!)
+	}
+	
+	func fcloseWrapper(_ fp: UnsafeMutablePointer<FILE>) {
+		fclose(fp)
+	}
 
     func readFileContents(_ path: AbsolutePath) throws -> ByteString {
         // Open the file.
@@ -495,7 +503,7 @@ private struct LocalFileSystem: FileSystem {
         if fp == nil {
             throw FileSystemError(errno: errno, path)
         }
-        defer { fclose(fp) }
+        defer { fcloseWrapper(fp) }
 
         // Read the data one block at a time.
         let data = BufferedOutputByteStream()
@@ -525,7 +533,7 @@ private struct LocalFileSystem: FileSystem {
         if fp == nil {
             throw FileSystemError(errno: errno, path)
         }
-        defer { fclose(fp) }
+        defer { fcloseWrapper(fp) }
 
         // Write the data in one chunk.
         var contents = bytes.contents
